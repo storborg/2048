@@ -55,7 +55,9 @@ GameManager.prototype.addRandomTile = function () {
 
 // Sends the updated grid to the actuator
 GameManager.prototype.actuate = function () {
-  this.updateHash();
+  if (!this.over) {
+    this.updateHash();
+  }
 
   if (this.scoreManager.get() < this.score) {
     this.scoreManager.set(this.score);
