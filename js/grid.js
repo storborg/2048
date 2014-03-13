@@ -82,3 +82,14 @@ Grid.prototype.withinBounds = function (position) {
   return position.x >= 0 && position.x < this.size &&
          position.y >= 0 && position.y < this.size;
 };
+
+// Clear the grid of all tiles
+Grid.prototype.clearTiles = function () {
+  var self = this;
+
+  self.eachCell(function (x, y, tile) {
+    if(tile) {
+      self.removeTile(tile);
+    }
+  });
+};

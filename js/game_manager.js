@@ -27,7 +27,9 @@ GameManager.prototype.setup = function () {
   this.won          = false;
 
   // Add the initial tiles
-  this.addStartTiles();
+  if(!this.checkHash()) {
+    this.addStartTiles();
+  }
 
   // Update the actuator
   this.actuate();
@@ -52,6 +54,8 @@ GameManager.prototype.addRandomTile = function () {
 
 // Sends the updated grid to the actuator
 GameManager.prototype.actuate = function () {
+  this.updateHash();
+
   if (this.scoreManager.get() < this.score) {
     this.scoreManager.set(this.score);
   }
@@ -225,4 +229,61 @@ GameManager.prototype.tileMatchesAvailable = function () {
 
 GameManager.prototype.positionsEqual = function (first, second) {
   return first.x === second.x && first.y === second.y;
+};
+
+// Encode the current state of the game. We use a 16-char string, with each
+// character representing a grid spot. Tile values are stored as the hex
+// encoding of the base-2 value of the tile.
+GameManager.prototype.saveState = function () {
+  var state = [];
+
+  this.grid.eachCell(function (x, y, tile) {
+    if(tile) {
+      state.push((Math.log(tile.value) / Math.log(2)).toString(16));
+    } else {
+      state.push("0");
+    }
+  });
+
+  return state.join("");
+};
+
+// Restore the game state from a string as returned by .encodeState();
+GameManager.prototype.restoreState = function (state) {
+  var el, tile, x, y, value;
+
+  this.grid.clearTiles();
+
+  for (var idx = 0; idx < state.length; idx++) {
+    c = state[idx];
+    if(c !== "0") {
+      value = Math.pow(2, parseInt(c, 16));
+      x = Math.floor(idx / 4);
+      y = idx % 4;
+
+      tile = new Tile({
+        x: x,
+        y: y
+      }, value);
+      this.grid.insertTile(tile);
+    }
+  }
+
+  this.actuate();
+};
+
+// Update the URL hash to store the current game tate.
+GameManager.prototype.updateHash = function () {
+  window.location.hash = "#" + this.saveState();
+};
+
+// Check for a URL hash. If there is one, restore game state.
+GameManager.prototype.checkHash = function () {
+  var s = window.location.hash.slice(1);
+  if(s !== "") {
+    this.restoreState(s);
+    return true;
+  } else {
+    return false;
+  }
 };
